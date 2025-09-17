@@ -1,1 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Bot - JSON View</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
+        body {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 100vw;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+        }
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background-color: #1e1e1e;
+            padding: 15px 20px;
+            border-bottom: 1px solid #333;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: #569cd6;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 5px;
+            display: none;
+        }
+
+        .back-btn:hover {
+            color: #4fc3f7;
+        }
+
+        .refresh-btn {
+            background: none;
+            border: none;
+            color: #ce9178;
+            font-family: inherit;
+            font-size: inherit;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .refresh-btn:hover {
+            color: #f4b942;
+        }
+
+        .content {
+            margin-top: 70px;
+            margin-bottom: 100px;
+            white-space: pre-wrap;
+        }
+
+        .json-key {
+            color: #9cdcfe;
+        }
+
+        .json-string {
+            color: #ce9178;
+        }
+
+        .json-number {
+            color: #b5cea8;
+        }
+
+        .json-bracket {
+            color: #d4d4d4;
+        }
+
+        .json-punctuation {
+            color: #d4d4d4;
+        }
+
+        .chat-item {
+            cursor: pointer;
+            padding: 5px 0;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+
+        .chat-item:hover {
+            background-color: #2d2d30;
+        }
+
+        .message-item {
+            margin: 10px 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .message-mine {
+            background-color: #005a9e;
+            margin-left: auto;
+            text-align: right;
+        }
+
+        .message-other {
+            background-color: #333;
+            margin-right: auto;
+        }
+
+        .input-area {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #1e1e1e;
+            border-top: 1px solid #333;
+            padding: 15px 20px;
+            display: none;
+        }
+
+        .input-area.active {
+            display: block;
+        }
+
+        .message-input {
+            width: 100%;
+            background-color: #2d2d30;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 10px;
+            color: #d4d4d4;
+            font-family: inherit;
+            font-size: inherit;
+            outline: none;
+            resize: vertical;
+            min-height: 40px;
+        }
+
+        .message-input:focus {
+            border-color: #007acc;
+        }
+
+        .click-to-type {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            cursor: pointer;
+            padding: 20px;
+            background-color: #252526;
+            border-radius: 4px;
+            border: 1px dashed #3e3e42;
+        }
+
+        .click-to-type:hover {
+            background-color: #2d2d30;
+            color: #888;
+        }
+
+        .loading {
+            color: #569cd6;
+            text-align: center;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .error {
+            color: #f44336;
+            padding: 10px;
+            background-color: #2d1b1b;
+            border-left: 3px solid #f44336;
+            margin: 10px 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 10px;
+            }
+            
+            .content {
+                margin-top: 60px;
+                font-size: 12px;
+            }
+            
+            .message-item {
+                max-width: 85%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="back-btn" onclick="showChatList()">←</button>
+        <button class="refresh-btn" onclick="refreshData()">{ "refresh": true }</button>
+    </div>
+
+    <div class="container">
+        <div class="content" id="content">
+            <div class="loading">Loading chats...</div>
+        </div>
+        
+        <div class="click-to-type" id="clickToType" onclick="activateInput()" style="display: none;">
+            Click here to type a message...
+        </div>
+        
+        <div class="input-area" id="inputArea">
+            <textarea class="message-input" id="messageInput" placeholder="Type your message..." onkeydown="handleKeyPress(event)"></textarea>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin; // Will use current Vercel domain
+        const BOT_TOKEN = 'YOUR_BOT_TOKEN_HERE'; // Replace with your bot token or set in Vercel env
+        
+        let currentView = 'chatList';
+        let currentChatId = null;
+        let chats = [];
+        let messages = [];
+
+        // Initialize the app
+        document.addEventListener('DOMContentLoaded', function() {
+            loadChats();
+        });
+
+        async function loadChats() {
+            try {
+                showLoading('Loading chats...');
+                const response = await fetch(`${API_BASE}/api/getUpdates?token=${BOT_TOKEN}`);
+                const data = await response.json();
+                
+                if (!data.ok) {
+                    throw new Error(data.description || 'Failed to load chats');
+                }
+                
+                // Process updates to get unique chats
+                const chatMap = new Map();
+                
+                if (data.result && data.result.length > 0) {
+                    data.result.forEach(update => {
+                        if (update.message) {
+                            const chat = update.message.chat;
+                            const text = update.message.text || '[Media]';
+                            chatMap.set(chat.id, {
+                                id: chat.id,
+                                user: chat.first_name || chat.title || chat.username || 'Unknown',
+                                lastMessage: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
+                                type: chat.type
+                            });
+                        }
+                    });
+                }
+                
+                chats = Array.from(chatMap.values());
+                displayChatList();
+            } catch (error) {
+                showError(`Error loading chats: ${error.message}`);
+            }
+        }
+
+        async function loadMessages(chatId) {
+            try {
+                showLoading('Loading messages...');
+                const response = await fetch(`${API_BASE}/api/getUpdates?token=${BOT_TOKEN}`);
+                const data = await response.json();
+                
+                if (!data.ok) {
+                    throw new Error(data.description || 'Failed to load messages');
+                }
+                
+                // Filter messages for this chat
+                messages = [];
+                if (data.result && data.result.length > 0) {
+                    data.result.forEach(update => {
+                        if (update.message && update.message.chat.id == chatId) {
+                            messages.push({
+                                text: update.message.text || '[Media]',
+                                from: update.message.from.id,
+                                isBot: update.message.from.is_bot || false
+                            });
+                        }
+                    });
+                }
+                
+                displayMessages();
+            } catch (error) {
+                showError(`Error loading messages: ${error.message}`);
+            }
+        }
+
+        function displayChatList() {
+            currentView = 'chatList';
+            document.querySelector('.back-btn').style.display = 'none';
+            document.getElementById('clickToType').style.display = 'none';
+            document.getElementById('inputArea').classList.remove('active');
+            
+            if (chats.length === 0) {
+                document.getElementById('content').innerHTML = `<span class="json-bracket">{</span>
+  <span class="json-key">"chats"</span><span class="json-punctuation">:</span> <span class="json-bracket">[]</span><span class="json-punctuation">,</span>
+  <span class="json-key">"message"</span><span class="json-punctuation">:</span> <span class="json-string">"No chats found. Start a conversation with your bot!"</span>
+<span class="json-bracket">}</span>`;
+                return;
+            }
+            
+            let jsonContent = '<span class="json-bracket">{</span>\n';
+            jsonContent += '  <span class="json-key">"chats"</span><span class="json-punctuation">:</span> <span class="json-bracket">[</span>\n';
+            
+            chats.forEach((chat, index) => {
+                const isLast = index === chats.length - 1;
+                jsonContent += `    <div class="chat-item" onclick="openChat(${chat.id})"><span class="json-bracket">{</span>
+      <span class="json-key">"id"</span><span class="json-punctuation">:</span> <span class="json-number">${chat.id}</span><span class="json-punctuation">,</span>
+      <span class="json-key">"user"</span><span class="json-punctuation">:</span> <span class="json-string">"${chat.user}"</span><span class="json-punctuation">,</span>
+      <span class="json-key">"lastMessage"</span><span class="json-punctuation">:</span> <span class="json-string">"${chat.lastMessage}"</span>
+    <span class="json-bracket">}</span>${isLast ? '' : '<span class="json-punctuation">,</span>'}</div>\n`;
+            });
+            
+            jsonContent += '  <span class="json-bracket">]</span>\n';
+            jsonContent += '<span class="json-bracket">}</span>';
+            
+            document.getElementById('content').innerHTML = jsonContent;
+        }
+
+        function displayMessages() {
+            currentView = 'messageView';
+            document.querySelector('.back-btn').style.display = 'block';
+            document.getElementById('clickToType').style.display = 'block';
+            
+            if (messages.length === 0) {
+                document.getElementById('content').innerHTML = `<span class="json-bracket">{</span>
+  <span class="json-key">"messages"</span><span class="json-punctuation">:</span> <span class="json-bracket">[]</span><span class="json-punctuation">,</span>
+  <span class="json-key">"message"</span><span class="json-punctuation">:</span> <span class="json-string">"No messages found"</span>
+<span class="json-bracket">}</span>`;
+                return;
+            }
+            
+            let jsonContent = '<span class="json-bracket">{</span>\n';
+            jsonContent += '  <span class="json-key">"messages"</span><span class="json-punctuation">:</span> <span class="json-bracket">[</span>\n';
+            
+            messages.forEach((message, index) => {
+                const isLast = index === messages.length - 1;
+                const messageClass = message.isBot ? 'message-mine' : 'message-other';
+                jsonContent += `    <div class="message-item ${messageClass}"><span class="json-bracket">{</span>
+      <span class="json-key">"text"</span><span class="json-punctuation">:</span> <span class="json-string">"${message.text}"</span>
+    <span class="json-bracket">}</span>${isLast ? '' : '<span class="json-punctuation">,</span>'}</div>\n`;
+            });
+            
+            jsonContent += '  <span class="json-bracket">]</span>\n';
+            jsonContent += '<span class="json-bracket">}</span>';
+            
+            document.getElementById('content').innerHTML = jsonContent;
+            
+            // Scroll to bottom
+            setTimeout(() => {
+                document.getElementById('content').scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 100);
+        }
+
+        function openChat(chatId) {
+            currentChatId = chatId;
+            loadMessages(chatId);
+        }
+
+        function showChatList() {
+            displayChatList();
+        }
+
+        function activateInput() {
+            document.getElementById('inputArea').classList.add('active');
+            document.getElementById('clickToType').style.display = 'none';
+            document.getElementById('messageInput').focus();
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text || !currentChatId) return;
+            
+            try {
+                input.value = '';
+                input.disabled = true;
+                
+                const response = await fetch(`${API_BASE}/api/sendMessage`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        token: BOT_TOKEN,
+                        chat_id: currentChatId,
+                        text: text
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.ok) {
+                    throw new Error(data.description || 'Failed to send message');
+                }
+                
+                // Add message to local display
+                messages.push({
+                    text: text,
+                    from: 'me',
+                    isBot: true
+                });
+                
+                displayMessages();
+                input.disabled = false;
+                input.focus();
+                
+            } catch (error) {
+                showError(`Error sending message: ${error.message}`);
+                input.disabled = false;
+            }
+        }
+
+        async function refreshData() {
+            if (currentView === 'chatList') {
+                loadChats();
+            } else if (currentView === 'messageView' && currentChatId) {
+                loadMessages(currentChatId);
+            }
+        }
+
+        function showLoading(message) {
+            document.getElementById('content').innerHTML = `<div class="loading">${message}</div>`;
+        }
+
+        function showError(message) {
+            document.getElementById('content').innerHTML = `<div class="error">${message}</div>`;
+        }
+
+        // Close input when clicking outside
+        document.addEventListener('click', function(event) {
+            const inputArea = document.getElementById('inputArea');
+            const clickToType = document.getElementById('clickToType');
+            
+            if (!inputArea.contains(event.target) && !clickToType.contains(event.target)) {
+                if (currentView === 'messageView') {
+                    inputArea.classList.remove('active');
+                    clickToType.style.display = 'block';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
