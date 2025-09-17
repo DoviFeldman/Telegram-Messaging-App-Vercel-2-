@@ -2,7 +2,7 @@
 
 
 {
-  "name": "telegram-bot-ui",
+  "name": "telegram_bot_ui",
   "version": "1.0.0",
   "description": "Telegram Bot UI with JSON-like interface",
   "main": "api/index.js",
