@@ -1,5 +1,4 @@
 
-// vercel.json - Vercel deployment configuration
 {
   "version": 2,
   "builds": [
