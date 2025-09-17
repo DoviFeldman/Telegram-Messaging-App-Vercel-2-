@@ -1,1 +1,24 @@
 
+
+{
+  "name": "telegram-bot-ui",
+  "version": "1.0.0",
+  "description": "Telegram Bot UI with JSON-like interface",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node api/index.js",
+    "dev": "nodemon api/index.js",
+    "deploy": "vercel"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=14.x"
+  }
+}
+
