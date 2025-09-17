@@ -22,6 +22,6 @@
     }
   ],
   "env": {
-    "TELEGRAM_BOT_TOKEN": "@telegram-bot-token"
+    "TELEGRAM_BOT_TOKEN": "@telegram_bot_token"
   }
 }
