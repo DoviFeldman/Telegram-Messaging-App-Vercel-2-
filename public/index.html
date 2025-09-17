@@ -281,8 +281,32 @@
                 showError(`Error loading chats: ${error.message}`);
             }
         }
+/// STARTED EDITING THIS FUNCTION
+        // async function loadMessages(chatId) {
+        //     try {
+        //         showLoading('Loading messages...');
+        //         const response = await fetch(`${API_BASE}/api/getUpdates?token=${BOT_TOKEN}`);
+        //         const data = await response.json();
+                
+        //         if (!data.ok) {
+        //             throw new Error(data.description || 'Failed to load messages');
+        //         }
+                
+        //         // Filter messages for this chat
+        //         messages = [];
+        //         if (data.result && data.result.length > 0) {
+        //             data.result.forEach(update => {
+        //                 if (update.message && update.message.chat.id == chatId) {
+        //                     messages.push({
+        //                         text: update.message.text || '[Media]',
+        //                         from: update.message.from.id,
+        //                         isBot: update.message.from.is_bot || false
+        //                     });
+        //                 }
+        //             });
+        //         }
 
-        async function loadMessages(chatId) {
+              async function loadMessages(chatId) {
             try {
                 showLoading('Loading messages...');
                 const response = await fetch(`${API_BASE}/api/getUpdates?token=${BOT_TOKEN}`);
@@ -305,6 +329,16 @@
                         }
                     });
                 }
+                
+                // Sort messages by update_id to ensure chronological order
+                messages.sort((a, b) => {
+                    const aUpdate = data.result.find(u => u.message && u.message.text === a.text);
+                    const bUpdate = data.result.find(u => u.message && u.message.text === b.text);
+                    return (aUpdate?.update_id || 0) - (bUpdate?.update_id || 0);
+                });
+
+                /// TILL HERE
+
                 
                 displayMessages();
             } catch (error) {
