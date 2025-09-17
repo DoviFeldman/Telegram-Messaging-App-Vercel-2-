@@ -316,7 +316,6 @@
         function displayChatList() {
             currentView = 'chatList';
             document.querySelector('.back-btn').style.display = 'none';
-            document.getElementById('clickToType').style.display = 'none';
             document.getElementById('inputArea').classList.remove('active');
             
             if (chats.length === 0) {
@@ -348,7 +347,6 @@
         function displayMessages() {
             currentView = 'messageView';
             document.querySelector('.back-btn').style.display = 'block';
-            document.getElementById('clickToType').style.display = 'block';
             
             if (messages.length === 0) {
                 document.getElementById('content').innerHTML = `<span class="json-bracket">{</span>
