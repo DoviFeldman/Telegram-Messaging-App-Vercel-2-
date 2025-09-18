@@ -143,7 +143,17 @@
             border-color: #007acc;
         }
 
-       
+       .click-to-type {
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        right: 20px;
+        text-align: center;
+        cursor: pointer;
+        padding: 20px;
+        background-color: transparent;
+        border: none;
+        }
 
         .loading {
             color: #569cd6;
@@ -190,7 +200,8 @@
         <div class="content" id="content">
             <div class="loading">Loading chats...</div>
         </div>
-        
+
+        <div class="click-to-type" id="clickToType" onclick="activateInput()" style="display: none;"></div>
         
         <div class="input-area" id="inputArea">
             <textarea class="message-input" id="messageInput" placeholder="Type your message..." onkeydown="handleKeyPress(event)"></textarea>
@@ -389,10 +400,20 @@
 
         function activateInput() {
             document.getElementById('inputArea').classList.add('active');
-            document.getElementById('clickToType').style.display = 'none';
+            document.getElementById('clickToType').style.display = 'none'; 
             document.getElementById('messageInput').focus();
         }
+        /////// FROM QUEN I DIDNT ADD
+//         function activateInput() {
+//     if (currentView === 'messageView') {
+//         document.getElementById('inputArea').classList.add('active');
+//         document.getElementById('messageInput').focus();
+//     }
+// }
+// IT JUST GETS RID OF THE document.getElementById('clickToType').style.display = 'none';  LINE, IDK WHY IT SAID IT WAS OPTIONAL
 
+
+        
         function handleKeyPress(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
