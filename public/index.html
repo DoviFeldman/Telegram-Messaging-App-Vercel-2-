@@ -327,76 +327,120 @@
 
     //    FROM CLAUDE OPUS 4 THINKING NEW TO PRESIST MESSAGES IN LOCAL STORAGE
         
-                async function loadMessages(chatId) {
-            try {
-                showLoading('Loading messages...');
+        //         async function loadMessages(chatId) {
+        //     try {
+        //         showLoading('Loading messages...');
                 
-                // Get stored messages from localStorage
-                const storedMessages = JSON.parse(localStorage.getItem(`chat_${chatId}`) || '[]');
+        //         // Get stored messages from localStorage
+        //         const storedMessages = JSON.parse(localStorage.getItem(`chat_${chatId}`) || '[]');
                 
-                // Get new messages from Telegram
-                const response = await fetch(`${API_BASE}/api/getUpdates?token=${BOT_TOKEN}`);
-                const data = await response.json();
+        //         // Get new messages from Telegram
+        //         const response = await fetch(`${API_BASE}/api/getUpdates?token=${BOT_TOKEN}`);
+        //         const data = await response.json();
                 
-                if (!data.ok) {
-                    throw new Error(data.description || 'Failed to load messages');
-                }
+        //         if (!data.ok) {
+        //             throw new Error(data.description || 'Failed to load messages');
+        //         }
                 
-                // Process new messages from Telegram
-                const newMessages = [];
-                if (data.result && data.result.length > 0) {
-                    data.result.forEach(update => {
-                        if (update.message && update.message.chat.id == chatId) {
-                            newMessages.push({
-                                text: update.message.text || '[Media]',
-                                from: update.message.from.id,
-                                isBot: false,
-                                timestamp: update.message.date * 1000 // Convert to milliseconds
-                            });
-                        }
-                    });
-                }
+        //         // Process new messages from Telegram
+        //         const newMessages = [];
+        //         if (data.result && data.result.length > 0) {
+        //             data.result.forEach(update => {
+        //                 if (update.message && update.message.chat.id == chatId) {
+        //                     newMessages.push({
+        //                         text: update.message.text || '[Media]',
+        //                         from: update.message.from.id,
+        //                         isBot: false,
+        //                         timestamp: update.message.date * 1000 // Convert to milliseconds
+        //                     });
+        //                 }
+        //             });
+        //         }
                 
-                // Merge stored and new messages, remove duplicates
-                const allMessages = [...storedMessages];
-                newMessages.forEach(newMsg => {
-                    if (!allMessages.some(msg => msg.timestamp === newMsg.timestamp && msg.text === newMsg.text)) {
-                        allMessages.push(newMsg);
-                    }
-                });
+        //         // Merge stored and new messages, remove duplicates
+        //         const allMessages = [...storedMessages];
+        //         newMessages.forEach(newMsg => {
+        //             if (!allMessages.some(msg => msg.timestamp === newMsg.timestamp && msg.text === newMsg.text)) {
+        //                 allMessages.push(newMsg);
+        //             }
+        //         });
                 
-                // Sort by timestamp and keep only last 50
-                messages = allMessages
-                    .sort((a, b) => a.timestamp - b.timestamp)
-                    .slice(-50);
+        //         // Sort by timestamp and keep only last 50
+        //         messages = allMessages
+        //             .sort((a, b) => a.timestamp - b.timestamp)
+        //             .slice(-50);
                 
-                // Save back to localStorage
-                localStorage.setItem(`chat_${chatId}`, JSON.stringify(messages));
+        //         // Save back to localStorage
+        //         localStorage.setItem(`chat_${chatId}`, JSON.stringify(messages));
                 
-            } catch (error) {
-                console.error('Error loading messages:', error);
-                // Load from localStorage as fallback
-                messages = JSON.parse(localStorage.getItem(`chat_${chatId}`) || '[]');
-            }
+        //     } catch (error) {
+        //         console.error('Error loading messages:', error);
+        //         // Load from localStorage as fallback
+        //         messages = JSON.parse(localStorage.getItem(`chat_${chatId}`) || '[]');
+        //     }
+        // }
+        
+        // // Add this function to save bot messages when sending
+        // function saveBotMessage(chatId, messageText) {
+        //     const storedMessages = JSON.parse(localStorage.getItem(`chat_${chatId}`) || '[]');
+        //     storedMessages.push({
+        //         text: messageText,
+        //         from: 8355249031, // You'll need to define your bot's ID
+        //         isBot: true,
+        //         timestamp: Date.now()
+        //     });
+            
+        //     // Keep only last 50 messages
+        //     const trimmedMessages = storedMessages.slice(-50);
+        //     localStorage.setItem(`chat_${chatId}`, JSON.stringify(trimmedMessages));
+        // }
+
+        // // TILL HERE!!!!! 
+        // ok that was a massive total fail lets try Sonnet 4 versions
+
+        async function loadMessages(chatId) {
+    try {
+        showLoading('Loading messages...');
+        
+        // Get messages from Telegram
+        const response = await fetch(`${API_BASE}/api/getUpdates?token=${BOT_TOKEN}`);
+        const data = await response.json();
+        
+        if (!data.ok) {
+            throw new Error(data.description || 'Failed to load messages');
         }
         
-        // Add this function to save bot messages when sending
-        function saveBotMessage(chatId, messageText) {
-            const storedMessages = JSON.parse(localStorage.getItem(`chat_${chatId}`) || '[]');
-            storedMessages.push({
-                text: messageText,
-                from: 8355249031, // You'll need to define your bot's ID
-                isBot: true,
-                timestamp: Date.now()
+        // Get incoming messages from Telegram
+        let telegramMessages = [];
+        if (data.result && data.result.length > 0) {
+            data.result.forEach(update => {
+                if (update.message && update.message.chat.id == chatId) {
+                    telegramMessages.push({
+                        text: update.message.text || '[Media]',
+                        from: update.message.from.id,
+                        isBot: false,
+                        timestamp: update.message.date * 1000 // Convert to milliseconds
+                    });
+                }
             });
-            
-            // Keep only last 50 messages
-            const trimmedMessages = storedMessages.slice(-50);
-            localStorage.setItem(`chat_${chatId}`, JSON.stringify(trimmedMessages));
         }
+        
+        // Get bot messages from localStorage
+        const storedMessages = JSON.parse(localStorage.getItem(`botMessages_${chatId}`) || '[]');
+        
+        // Combine and sort all messages by timestamp
+        const allMessages = [...telegramMessages, ...storedMessages];
+        allMessages.sort((a, b) => a.timestamp - b.timestamp);
+        
+        // Keep only latest 50 messages
+        messages = allMessages.slice(-50);
+        
+    } catch (error) {
+        console.error('Error loading messages:', error);
+    }
+}
 
-        // TILL HERE!!!!! 
-
+        // TILL HERE, VERY SHORT
         
                 
                 displayMessages();
@@ -548,6 +592,64 @@
         // }
 
 
+//         async function sendMessage() {
+//     const input = document.getElementById('messageInput');
+//     const text = input.value.trim();
+    
+//     if (!text || !currentChatId) return;
+    
+//     try {
+//         input.value = '';
+//         input.disabled = true;
+        
+//         const response = await fetch(`${API_BASE}/api/sendMessage`, {
+//             method: 'POST',
+//             headers: {
+//                 'Content-Type': 'application/json'
+//             },
+//             body: JSON.stringify({
+//                 token: BOT_TOKEN,
+//                 chat_id: currentChatId,
+//                 text: text
+//             })
+//         });
+        
+//         const data = await response.json();
+        
+//         if (!data.ok) {
+//             throw new Error(data.description || 'Failed to send message');
+//         }
+        
+//         // Create the message object
+//         const botMessage = {
+//             text: text,
+//             from: 'me', // Keep your existing format
+//             isBot: true,
+//             timestamp: Date.now()
+//         };
+        
+//         // Add message to local display
+//         messages.push(botMessage);
+        
+//         // Save to localStorage
+//         const storedMessages = JSON.parse(localStorage.getItem(`chat_${currentChatId}`) || '[]');
+//         storedMessages.push(botMessage);
+//         const trimmedMessages = storedMessages.slice(-50); // Keep last 50
+//         localStorage.setItem(`chat_${currentChatId}`, JSON.stringify(trimmedMessages));
+        
+//         displayMessages();
+//         input.disabled = false;
+//         input.focus();
+        
+//     } catch (error) {
+//         showError(`Error sending message: ${error.message}`);
+//         input.disabled = false;
+//     }
+// }
+//   // TILL HERE CLAUDE OPUS 4 THINKING
+
+       // TRYING OUT CLAUDE SONNET 4 
+
         async function sendMessage() {
     const input = document.getElementById('messageInput');
     const text = input.value.trim();
@@ -576,22 +678,24 @@
             throw new Error(data.description || 'Failed to send message');
         }
         
-        // Create the message object
-        const botMessage = {
+        // Create message object
+        const messageObj = {
             text: text,
-            from: 'me', // Keep your existing format
+            from: 'me',
             isBot: true,
             timestamp: Date.now()
         };
         
-        // Add message to local display
-        messages.push(botMessage);
+        // Add to local display
+        messages.push(messageObj);
         
         // Save to localStorage
-        const storedMessages = JSON.parse(localStorage.getItem(`chat_${currentChatId}`) || '[]');
-        storedMessages.push(botMessage);
-        const trimmedMessages = storedMessages.slice(-50); // Keep last 50
-        localStorage.setItem(`chat_${currentChatId}`, JSON.stringify(trimmedMessages));
+        const storedMessages = JSON.parse(localStorage.getItem(`botMessages_${currentChatId}`) || '[]');
+        storedMessages.push(messageObj);
+        
+        // Keep only latest 50 bot messages in storage
+        const recentBotMessages = storedMessages.slice(-50);
+        localStorage.setItem(`botMessages_${currentChatId}`, JSON.stringify(recentBotMessages));
         
         displayMessages();
         input.disabled = false;
@@ -602,7 +706,8 @@
         input.disabled = false;
     }
 }
-  // TILL HERE CLAUDE OPUS 4 THINKING
+
+     //   TILL HERE!!!!!!
         
         async function refreshData() {
             if (currentView === 'chatList') {
