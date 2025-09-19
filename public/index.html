@@ -266,30 +266,30 @@
                 showError(`Error loading chats: ${error.message}`);
             }
         }
-// STARTED EDITING THIS FUNCTION, reverting back to original!!!
-        async function loadMessages(chatId) {
-            try {
-                showLoading('Loading messages...');
-                const response = await fetch(`${API_BASE}/api/getUpdates?token=${BOT_TOKEN}`);
-                const data = await response.json();
+// STARTED EDITING THIS FUNCTION, reverting back to original!!! NOW MOVED ONTO MY CLAUDE SONNET 4 FIRST PROMPT WITH INSTRUCTIONS TO ADD TO LOCAL STORAGE
+        // async function loadMessages(chatId) {
+        //     try {
+        //         showLoading('Loading messages...');
+        //         const response = await fetch(`${API_BASE}/api/getUpdates?token=${BOT_TOKEN}`);
+        //         const data = await response.json();
                 
-                if (!data.ok) {
-                    throw new Error(data.description || 'Failed to load messages');
-                }
+        //         if (!data.ok) {
+        //             throw new Error(data.description || 'Failed to load messages');
+        //         }
                 
-                // Filter messages for this chat
-                messages = [];
-                if (data.result && data.result.length > 0) {
-                    data.result.forEach(update => {
-                        if (update.message && update.message.chat.id == chatId) {
-                            messages.push({
-                                text: update.message.text || '[Media]',
-                                from: update.message.from.id,
-                                isBot: update.message.from.is_bot || false
-                            });
-                        }
-                    });
-                }
+        //         // Filter messages for this chat
+        //         messages = [];
+        //         if (data.result && data.result.length > 0) {
+        //             data.result.forEach(update => {
+        //                 if (update.message && update.message.chat.id == chatId) {
+        //                     messages.push({
+        //                         text: update.message.text || '[Media]',
+        //                         from: update.message.from.id,
+        //                         isBot: update.message.from.is_bot || false
+        //                     });
+        //                 }
+        //             });
+        //         }
                 
           //      THIS IS THE NEW OLD ONE BY CLAUDE SONNET THINKING MY ACCOUNT SECOND PROMPT THAT DIDNT WORK
             //   async function loadMessages(chatId) {
@@ -442,6 +442,64 @@
 // }
 
         // TILL HERE, VERY SHORT
+
+                // OK FINAL! PASED ALL THE CODE INTO MY OWN CLAUDE SONNET 4 AND TOLD IT TO ADD TO LOCAL STORAGE
+
+
+                async function loadMessages(chatId) {
+    try {
+        showLoading('Loading messages...');
+        
+        // Get stored messages from localStorage first
+        const storedMessages = JSON.parse(localStorage.getItem(`chat_${chatId}`) || '[]');
+        
+        // Get new messages from Telegram
+        const response = await fetch(`${API_BASE}/api/getUpdates?token=${BOT_TOKEN}`);
+        const data = await response.json();
+        
+        if (!data.ok) {
+            throw new Error(data.description || 'Failed to load messages');
+        }
+        
+        // Filter messages for this chat from Telegram
+        const telegramMessages = [];
+        if (data.result && data.result.length > 0) {
+            data.result.forEach(update => {
+                if (update.message && update.message.chat.id == chatId) {
+                    const msgObj = {
+                        text: update.message.text || '[Media]',
+                        from: update.message.from.id,
+                        isBot: false,
+                        timestamp: update.message.date * 1000
+                    };
+                    // Only add if not already stored
+                    if (!storedMessages.some(stored => stored.timestamp === msgObj.timestamp && stored.text === msgObj.text)) {
+                        telegramMessages.push(msgObj);
+                    }
+                });
+            });
+        }
+        
+        // Combine stored messages with new Telegram messages
+        const allMessages = [...storedMessages, ...telegramMessages];
+        
+        // Sort by timestamp and keep last 100 messages
+        messages = allMessages
+            .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+            .slice(-100);
+        
+        // Update localStorage with the combined messages
+        localStorage.setItem(`chat_${chatId}`, JSON.stringify(messages));
+        
+        displayMessages();
+    } catch (error) {
+        showError(`Error loading messages: ${error.message}`);
+    }
+}
+
+              //  TILL HERE!!!
+
+        
         
                 
                 displayMessages();
@@ -547,51 +605,51 @@
             }
         }
         
-  // OLD SENDMESSAGES() FUNCTION BEFOR OPUS 4 THINKING, reverting back to original!!!!! 
-        async function sendMessage() {
-            const input = document.getElementById('messageInput');
-            const text = input.value.trim();
+  // OLD SENDMESSAGES() FUNCTION BEFOR OPUS 4 THINKING, reverting back to original!!!!! NOW MOVED ONTO NEW CLAUDE SONNET 4 FRIST PROMPT WITH INSTRUCTIONS TO ADD TO LOCA STORAGE
+        // async function sendMessage() {
+        //     const input = document.getElementById('messageInput');
+        //     const text = input.value.trim();
             
-            if (!text || !currentChatId) return;
+        //     if (!text || !currentChatId) return;
             
-            try {
-                input.value = '';
-                input.disabled = true;
+        //     try {
+        //         input.value = '';
+        //         input.disabled = true;
                 
-                const response = await fetch(`${API_BASE}/api/sendMessage`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        token: BOT_TOKEN,
-                        chat_id: currentChatId,
-                        text: text
-                    })
-                });
+        //         const response = await fetch(`${API_BASE}/api/sendMessage`, {
+        //             method: 'POST',
+        //             headers: {
+        //                 'Content-Type': 'application/json'
+        //             },
+        //             body: JSON.stringify({
+        //                 token: BOT_TOKEN,
+        //                 chat_id: currentChatId,
+        //                 text: text
+        //             })
+        //         });
                 
-                const data = await response.json();
+        //         const data = await response.json();
                 
-                if (!data.ok) {
-                    throw new Error(data.description || 'Failed to send message');
-                }
+        //         if (!data.ok) {
+        //             throw new Error(data.description || 'Failed to send message');
+        //         }
                 
-                // Add message to local display
-                messages.push({
-                    text: text,
-                    from: 'me',
-                    isBot: true
-                });
+        //         // Add message to local display
+        //         messages.push({
+        //             text: text,
+        //             from: 'me',
+        //             isBot: true
+        //         });
                 
-                displayMessages();
-                input.disabled = false;
-                input.focus();
+        //         displayMessages();
+        //         input.disabled = false;
+        //         input.focus();
                 
-            } catch (error) {
-                showError(`Error sending message: ${error.message}`);
-                input.disabled = false;
-            }
-        }
+        //     } catch (error) {
+        //         showError(`Error sending message: ${error.message}`);
+        //         input.disabled = false;
+        //     }
+        // }
 
 
 //         async function sendMessage() {
@@ -710,6 +768,67 @@
 // }
 
      //   TILL HERE!!!!!!
+
+
+
+        // FINAL TRY WITH MY CLAUDE SONNET 4 FIRST PROMPT WITH INSTRUCTIONS TO ADD TO LOCAL STORAGE
+
+        async function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const text = input.value.trim();
+    
+    if (!text || !currentChatId) return;
+    
+    try {
+        input.value = '';
+        input.disabled = true;
+        
+        const response = await fetch(`${API_BASE}/api/sendMessage`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                token: BOT_TOKEN,
+                chat_id: currentChatId,
+                text: text
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!data.ok) {
+            throw new Error(data.description || 'Failed to send message');
+        }
+        
+        // Create message object with timestamp
+        const botMessage = {
+            text: text,
+            from: 'me',
+            isBot: true,
+            timestamp: Date.now()
+        };
+        
+        // Add to current display
+        messages.push(botMessage);
+        
+        // Save to localStorage
+        const storedMessages = JSON.parse(localStorage.getItem(`chat_${currentChatId}`) || '[]');
+        storedMessages.push(botMessage);
+        localStorage.setItem(`chat_${currentChatId}`, JSON.stringify(storedMessages));
+        
+        displayMessages();
+        input.disabled = false;
+        input.focus();
+        
+    } catch (error) {
+        showError(`Error sending message: ${error.message}`);
+        input.disabled = false;
+    }
+}
+
+        // TILL HERE!!!!! 
+        
         
         async function refreshData() {
             if (currentView === 'chatList') {
