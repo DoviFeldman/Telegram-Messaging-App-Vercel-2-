@@ -475,9 +475,9 @@
                     // Only add if not already stored
                     if (!storedMessages.some(stored => stored.timestamp === msgObj.timestamp && stored.text === msgObj.text)) {
                         telegramMessages.push(msgObj);
-                    }
+                    } } // added in this secoind squiggle
                 });
-            });
+          //  }); and remmoved this one 
         }
         
         // Combine stored messages with new Telegram messages
